@@ -207,7 +207,7 @@ should update the code to do C<< CGI::PSGI->new($env) >> instead of
 C<< CGI->new >> to create a new CGI object, in the same way how
 L<CGI::Fast> object is being initialized in FastCGI environment.
 
-CGI::PSGI is a subclass of CGI and handles the difference between adn
+CGI::PSGI is a subclass of CGI and handles the difference between
 CGI and PSGI environments transparently for you. Function-based
 interface like C<< use CGI ':standard' >> doesn't work with this
 module. You should always create an object with C<<
