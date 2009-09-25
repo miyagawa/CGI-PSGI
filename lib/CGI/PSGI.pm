@@ -120,7 +120,10 @@ sub psgi_header {
 
     push(@header,"Content-Type", $type) if $type ne '';
 
-    return $status || 200, \@header;
+    $status ||= "200";
+    $status =~ s/\D*$//;
+
+    return $status, \@header;
 }
 
 # The list is auto generated and modified with:
