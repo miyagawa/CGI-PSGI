@@ -193,22 +193,30 @@ CGI::PSGI - Enable your CGI.pm aware applications to adapt PSGI protocol
 
 =head1 DESCRIPTION
 
-CGI::PSGI is an extension of CGI.pm to enable PSGI protocol in your
-already CGI.pm aware applications. This module leaves CGI.pm core code
-untouched, but makes your own code slightly modified.
+First of all, if you have a CGI script that you want to run under PSGI
+web servers (i.e. "end users" of CGI.pm), this module might not be
+what you want. Take a look at L<CGI::Emulate::PSGI> instead.
 
-Your application should call C<< CGI::PSGI->new($env) >> instead of
+This module is for web application framework developers who currently
+uses L<CGI> to handle query parameters. You can switch to use
+CGI::PSGI instead of L<CGI>, to make your framework compatible to PSGI
+with a slight modification of your framework adapter.
+
+Your application, typically the web application framework adapter
+should update the code to do C<< CGI::PSGI->new($env) >> instead of
 C<< CGI->new >> to create a new CGI object, in the same way how
 L<CGI::Fast> object is being initialized in FastCGI environment.
+
+CGI::PSGI is a subclass of CGI and handles the difference between adn
+CGI and PSGI environments transparently for you. Function-based
+interface like C<< use CGI ':standard' >> doesn't work with this
+module. You should always create an object with C<<
+CGI::PSGI->new($env) >> and should call a method on it.
 
 C<psgi_header> method is added for your convenience if your
 application uses C<< $cgi->header >> to generate header, but you are
 free to ignore this method and instead can generate status code and
 headers array ref by yourself.
-
-If you want to run your CGI scripts unmodified under PSGI enviroments,
-this module might not be for you: take a look at L<CGI::Emulate::PSGI>
-instead.
 
 =head1 AUTHOR
 
