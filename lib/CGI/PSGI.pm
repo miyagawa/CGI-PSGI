@@ -5,7 +5,6 @@ use 5.008_001;
 our $VERSION = '0.01';
 
 use base qw(CGI);
-our $AUTOLOAD;
 
 sub new {
     my($class, $env) = @_;
