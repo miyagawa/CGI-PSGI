@@ -1,28 +1,3 @@
-NOTE: This is an alternative approach to make your CGI.pm aware applications
-to enable PSGI protocol. The API and implementation are different from what you
-get in psgi_support branch in markstos' git repo [1], even though the module
-name (CGI::PSGI) is the same.
-
-[1] http://github.com/markstos/CGI.pm/commits/psgi_support
-
-The key difference is that you need to change your application from:
-
-  my $q = CGI->new;
-  print $q->header, $body;
-
-to
-
-  use CGI::PSGI;
-  sub app {
-      my $env = shift;
-      my $q = CGI::PSGI->new($env);
-      return [ $q->psgi_header, [ $output ] ];
-  }
-
-This module doesn't require patching CGI.pm core.
-
-See also http://rt.cpan.org/Public/Bug/Display.html?id=49943
-
 This is Perl module CGI::PSGI.
 
 INSTALLATION
