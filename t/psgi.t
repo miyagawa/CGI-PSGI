@@ -94,10 +94,10 @@ $q->_reset_globals;
 
     $q = CGI::PSGI->new($env);
     ok !$q->param,     'param() is false if no parameters';
-    if (eval { CGI->VERSION(3.45) }) {
+    if (eval { CGI->VERSION(3.46) }) {
       ok !$q->url_param, 'url_param() is false if no parameters';
     } else {
-      # CGI.pm before 3.45 had an inconsistency with url_param and an empty
+      # CGI.pm before 3.46 had an inconsistency with url_param and an empty
       # query string
       my %p = map { $_ => [ $q->url_param($_) ] } $q->url_param;
       is_deeply \%p, { keywords => [] };
