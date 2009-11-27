@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.03  Fri Nov 27 17:32:50 JST 2009
+        - Speicify CGI.pm dependency since older one has different read_from_client params
+
 0.02  Mon Oct 19 20:16:25 PDT 2009
         - Fix the test to skip if <= 3.45 not < 3.45
 
