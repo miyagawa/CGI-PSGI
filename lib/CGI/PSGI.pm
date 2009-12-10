@@ -127,7 +127,7 @@ sub psgi_header {
 
 # The list is auto generated and modified with:
 # perl -nle '/^sub (\w+)/ and $sub=$1; \
-#   /^}\s*$/ and do { print $sub if $code{$sub} =~ /[\%\$]ENV/; undef $sub };\
+#   /^}\s*$/ and do { print $sub if $code{$sub} =~ /([\%\$]ENV|http\()/; undef $sub };\
 #   $code{$sub} .= "$_\n" if $sub; \
 #   /^\s*package [^C]/ and exit' \
 # `perldoc -l CGI`
@@ -141,10 +141,12 @@ for my $method (qw(
     content_type
     path_translated
     request_uri
+    virtual_host
     remote_host
     remote_addr
     server_name
     server_software
+    virtual_port
     server_port
     server_protocol
     http
