@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.04  Wed Dec  9 16:37:47 PST 2009
+        - Added virtual_host to the list because bad CGI.pm uses host() as a function not a method (kazuho)
+
 0.03  Fri Nov 27 17:32:50 JST 2009
         - Speicify CGI.pm dependency since older one has different read_from_client params
 

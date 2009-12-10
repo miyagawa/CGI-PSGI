@@ -25,6 +25,7 @@ META.yml
 README
 t/00_compile.t
 t/cookie.t
+t/http.t
 t/psgi.t
 xt/perlcritic.t
 xt/pod.t
