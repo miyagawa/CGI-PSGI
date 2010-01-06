@@ -10,7 +10,10 @@ sub new {
     my($class, $env) = @_;
     CGI::initialize_globals();
 
-    my $self = bless { psgi_env => $env }, $class;
+    my $self = bless {
+        psgi_env     => $env,
+        use_tempfile => 1,
+    }, $class;
 
     local *ENV = $env;
     $self->SUPER::init;
