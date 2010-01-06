@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.05  Wed Jan  6 00:37:23 PST 2010
+        - Fixed a bug where uploaded files are not saved in temp files (fujiwara)
+
 0.04  Wed Dec  9 16:37:47 PST 2009
         - Added virtual_host to the list because bad CGI.pm uses host() as a function not a method (kazuho)
 
