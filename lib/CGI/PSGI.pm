@@ -2,7 +2,7 @@ package CGI::PSGI;
 
 use strict;
 use 5.008_001;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use base qw(CGI);
 
@@ -19,6 +19,10 @@ sub new {
     $self->SUPER::init;
 
     $self;
+}
+
+sub env {
+    $_[0]->{psgi_env};
 }
 
 sub read_from_client {
@@ -222,6 +226,30 @@ C<psgi_header> method is added for your convenience if your
 application uses C<< $cgi->header >> to generate header, but you are
 free to ignore this method and instead can generate status code and
 headers array ref by yourself.
+
+=head1 METHODS
+
+It adds a following extra method to CGI object.
+
+=over 4
+
+=item env
+
+  $env = $cgi->env;
+
+Returns PSGI environment hash refernce. This allows CGI.pm based
+application frameworks such as L<CGI::Application> to access PSGI
+extension, typically set by Plack Middleware components.
+
+So if you enable L<Plack::Middleware::Session>, your application and
+plugin developers can access the session via:
+
+  $cgi->env->{'plack.session'}->get("foo");
+
+Of course this should be coded carefully by checking the existence of
+C<env> method as well as the hash key C<plack.session>.
+
+=back
 
 =head1 AUTHOR
 
