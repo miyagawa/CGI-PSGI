@@ -16,6 +16,7 @@ sub new {
     }, $class;
 
     local *ENV = $env;
+    local $CGI::MOD_PERL = 0;
     $self->SUPER::init;
 
     $self;
