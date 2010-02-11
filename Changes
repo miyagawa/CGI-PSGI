@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+        - Added psgi_redirect method (markstos)
+        - Refreshed the documentation (markstos)
+
 0.07  Tue Jan 12 10:21:19 PST 2010
         - Unset $CGI::MOD_PERL in case CGI.pm is preloaded by other non-PSGI apps running on Apache
           (confound, sukria)
