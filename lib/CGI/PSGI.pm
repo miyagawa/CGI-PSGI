@@ -238,7 +238,7 @@ It adds a following extra method to CGI object.
 
   $env = $cgi->env;
 
-Returns PSGI environment hash refernce. This allows CGI.pm based
+Returns PSGI environment hash reference. This allows CGI.pm based
 application frameworks such as L<CGI::Application> to access PSGI
 extension, typically set by Plack Middleware components.
 
