@@ -133,6 +133,26 @@ sub psgi_header {
     return $status, \@header;
 }
 
+# Ported from CGI.pm's redirect() method. 
+sub psgi_redirect {
+    my ($self,@p) = @_;
+    my($url,$target,$status,$cookie,$nph,@other) = 
+         CGI::rearrange([['LOCATION','URI','URL'],'TARGET','STATUS',['COOKIE','COOKIES'],'NPH'],@p);
+    $status = '302 Found' unless defined $status;
+    $url ||= $self->self_url;
+    my(@o);
+    for (@other) { tr/\"//d; push(@o,split("=",$_,2)); }
+    unshift(@o,
+	 '-Status'  => $status,
+	 '-Location'=> $url,
+	 '-nph'     => $nph);
+    unshift(@o,'-Target'=>$target) if $target;
+    unshift(@o,'-Type'=>'');
+    my @unescaped;
+    unshift(@unescaped,'-Cookie'=>$cookie) if $cookie;
+    return $self->psgi_header((map {$self->unescapeHTML($_)} @o),@unescaped);
+}
+
 # The list is auto generated and modified with:
 # perl -nle '/^sub (\w+)/ and $sub=$1; \
 #   /^}\s*$/ and do { print $sub if $code{$sub} =~ /([\%\$]ENV|http\()/; undef $sub };\
@@ -191,6 +211,8 @@ __END__
 
 CGI::PSGI - Enable your CGI.pm aware applications to adapt PSGI protocol
 
+CGI::PSGI - Adapt CGI.pm to the PSGI protocol
+
 =head1 SYNOPSIS
 
   use CGI::PSGI;
@@ -203,44 +225,38 @@ CGI::PSGI - Enable your CGI.pm aware applications to adapt PSGI protocol
 
 =head1 DESCRIPTION
 
-First of all, if you have a CGI script that you want to run under PSGI
-web servers (i.e. "end users" of CGI.pm), this module might not be
-what you want. Take a look at L<CGI::Emulate::PSGI> instead.
+This module is for web application framework developers who currently uses
+L<CGI> to handle query parameters. You can switch to use CGI::PSGI instead of
+L<CGI>, to make your framework compatible to PSGI with a slight modification of
+your framework adapter. The framework should already be collecting the body
+content to print at one place, and not printing any content directly to STDOUT.
 
-This module is for web application framework developers who currently
-uses L<CGI> to handle query parameters. You can switch to use
-CGI::PSGI instead of L<CGI>, to make your framework compatible to PSGI
-with a slight modification of your framework adapter.
+On the other hand, if you are an "end user" of CGI.pm and have a CGI script
+that you want to run under PSGI web servers, this module might not be what you
+want.  Take a look at L<CGI::Emulate::PSGI> instead.
 
 Your application, typically the web application framework adapter
 should update the code to do C<< CGI::PSGI->new($env) >> instead of
-C<< CGI->new >> to create a new CGI object, in the same way how
-L<CGI::Fast> object is being initialized in FastCGI environment.
+C<< CGI->new >> to create a new CGI object, in the same way that
+L<CGI::Fast> object is initialized in a FastCGI environment.
 
-CGI::PSGI is a subclass of CGI and handles the difference between
-CGI and PSGI environments transparently for you. Function-based
-interface like C<< use CGI ':standard' >> doesn't work with this
-module. You should always create an object with C<<
-CGI::PSGI->new($env) >> and should call a method on it.
-
-C<psgi_header> method is added for your convenience if your
-application uses C<< $cgi->header >> to generate header, but you are
-free to ignore this method and instead can generate status code and
-headers array ref by yourself.
+CGI::PSGI is a subclass of CGI and handles the difference between CGI and PSGI
+environments transparently for you. Only the OO interface works this way.  You
+should always create an object with C<< CGI::PSGI->new($env) >> and should call
+a method on it.  The function-based interface like C<< use CGI ':standard' >>
+doesn't work with this module. 
 
 =head1 METHODS
 
-It adds a following extra method to CGI object.
+CGI::PSGI adds the following extra methods to CGI.pm
 
-=over 4
-
-=item env
+=head2 env
 
   $env = $cgi->env;
 
-Returns PSGI environment hash reference. This allows CGI.pm based
-application frameworks such as L<CGI::Application> to access PSGI
-extension, typically set by Plack Middleware components.
+Returns the PSGI environment in a hash reference. This allows CGI.pm based
+application frameworks such as L<CGI::Application> to access PSGI extensions,
+typically set by Plack Middleware components.
 
 So if you enable L<Plack::Middleware::Session>, your application and
 plugin developers can access the session via:
@@ -250,11 +266,33 @@ plugin developers can access the session via:
 Of course this should be coded carefully by checking the existence of
 C<env> method as well as the hash key C<plack.session>.
 
-=back
+=head2 psgi_header
+
+ my ($status_code, $headers_aref) = $cgi->psgi_header(%args); 
+
+Works like CGI.pm's L<header()>, but the return format is modified. It returns
+an array with the status code and arrayref of header pairs that PSGI
+requires.
+
+If your application doesn't use C<< $cgi->header >>, you can ignore this
+method and generate the status code and headers arrayref another way.
+
+=head2 psgi_redirect
+
+ my ($status_code, $headers_aref) = $cgi->psgi_redirect(%args); 
+
+Works like CGI.pm's L<redirect()>, but the return format is modified. It
+returns an array with the status code and arrayref of header pairs that PSGI
+requires.
+
+If your application doesn't use C<< $cgi->redirect >>, you can ignore this
+method and generate the status code and headers arrayref another way.
 
 =head1 AUTHOR
 
 Tatsuhiko Miyagawa E<lt>miyagawa@bulknews.netE<gt>
+
+Mark Stosberg E<lt>mark@summersault.comE<gt>
 
 =head1 LICENSE
 
@@ -263,6 +301,6 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<CGI> L<CGI::Emulate::PSGI>
+L<CGI>, L<CGI::Emulate::PSGI>
 
 =cut

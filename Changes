@@ -1,6 +1,6 @@
 Revision history for Perl extension CGI::PSGI
 
-0.08  Thu Feb 11 14:47:26 PST 2010
+0.09  Thu Feb 11 14:47:26 PST 2010
         - Added ->psgi_redirect to make migration from CGI.pm even easier (markstos)
         - POD overhaul and improvements (markstos)
 
