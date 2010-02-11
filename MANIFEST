@@ -27,6 +27,7 @@ t/00_compile.t
 t/cookie.t
 t/http.t
 t/psgi.t
+t/redirect.t
 t/upload.t
 xt/perlcritic.t
 xt/pod.t
