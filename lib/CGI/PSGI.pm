@@ -209,8 +209,6 @@ __END__
 
 =head1 NAME
 
-CGI::PSGI - Enable your CGI.pm aware applications to adapt PSGI protocol
-
 CGI::PSGI - Adapt CGI.pm to the PSGI protocol
 
 =head1 SYNOPSIS
@@ -226,10 +224,12 @@ CGI::PSGI - Adapt CGI.pm to the PSGI protocol
 =head1 DESCRIPTION
 
 This module is for web application framework developers who currently uses
-L<CGI> to handle query parameters. You can switch to use CGI::PSGI instead of
-L<CGI>, to make your framework compatible to PSGI with a slight modification of
-your framework adapter. The framework should already be collecting the body
-content to print at one place, and not printing any content directly to STDOUT.
+L<CGI> to handle query parameters, and would like for the frameworks to comply
+with the L<PSGI> protocol.
+
+Only slight modifications should be required if the framework is already
+collecting the body content to print to STDOUT at one place (rather using
+the print-as-you-go approach).
 
 On the other hand, if you are an "end user" of CGI.pm and have a CGI script
 that you want to run under PSGI web servers, this module might not be what you
@@ -237,24 +237,26 @@ want.  Take a look at L<CGI::Emulate::PSGI> instead.
 
 Your application, typically the web application framework adapter
 should update the code to do C<< CGI::PSGI->new($env) >> instead of
-C<< CGI->new >> to create a new CGI object, in the same way that
-L<CGI::Fast> object is initialized in a FastCGI environment.
+C<< CGI->new >> to create a new CGI object. (This is similar to how
+L<CGI::Fast> object is initialized in a FastCGI environment.)
 
-CGI::PSGI is a subclass of CGI and handles the difference between CGI and PSGI
-environments transparently for you. Only the OO interface works this way.  You
-should always create an object with C<< CGI::PSGI->new($env) >> and should call
-a method on it.  The function-based interface like C<< use CGI ':standard' >>
-doesn't work with this module. 
+=head1 INTERFACES SUPPORTED
+
+Only the object-oriented interface of CGI.pm is supported through CGI::PSGI.
+This means you should always create an object with C<< CGI::PSGI->new($env) >>
+and should call methods on the object.
+
+The function-based interface like C<< use CGI ':standard' >> does not work with this module.
 
 =head1 METHODS
 
-CGI::PSGI adds the following extra methods to CGI.pm
+CGI::PSGI adds the following extra methods to CGI.pm:
 
 =head2 env
 
   $env = $cgi->env;
 
-Returns the PSGI environment in a hash reference. This allows CGI.pm based
+Returns the PSGI environment in a hash reference. This allows CGI.pm-based
 application frameworks such as L<CGI::Application> to access PSGI extensions,
 typically set by Plack Middleware components.
 
