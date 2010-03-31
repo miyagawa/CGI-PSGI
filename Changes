@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.10  Wed Mar 31 01:14:43 PDT 2010
+        - Upped CGI.pm dependency to 3.15, released in 2005 and is core in perl 5.8.8
+
 0.09  Thu Feb 11 14:47:26 PST 2010
         - Added ->psgi_redirect to make migration from CGI.pm even easier (markstos)
         - POD overhaul and improvements (markstos)
