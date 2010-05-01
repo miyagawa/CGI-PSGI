@@ -2,7 +2,7 @@ use inc::Module::Install;
 name 'CGI-PSGI';
 all_from 'lib/CGI/PSGI.pm';
 
-requires 'CGI', '3.15';
+requires 'CGI', '3.33';
 
 build_requires 'Test::More';
 author_tests('xt');
