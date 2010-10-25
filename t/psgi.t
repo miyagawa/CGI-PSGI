@@ -119,6 +119,6 @@ $q->_reset_globals;
     my($status, $headers) = $q->psgi_header(-status => 302, -content_type => 'text/plain');
 
     is $status, 302;
-    is_deeply $headers, [ 'Status', 302, 'Content-Type', 'text/plain; charset=utf-8' ];
+    is_deeply $headers, [ 'Content-Type', 'text/plain; charset=utf-8' ];
 }
 

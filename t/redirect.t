@@ -29,14 +29,13 @@ my $q = CGI::PSGI->new($env);
     my $test = 'psgi_redirect($url)';
     my ($status,$headers) = $q->psgi_redirect('http://somewhere.else');
     is($status, 302, "$test - default status");
-    is_deeply $headers, [ 'Status', '302 Found', 'Location' => 'http://somewhere.else' ], "$test - headers array";  
+    is_deeply $headers, [ 'Location' => 'http://somewhere.else' ], "$test - headers array";  
 }
 {
     my $test = 'psgi_redirect() with content type';
     my ($status,$headers) = $q->psgi_redirect( -Location=>'http://somewhere.else',-Type=>'text/html');
     is($status, 302, "$test - status");
     is_deeply $headers, [ 
-        'Status'   => '302 Found', 
         'Location' => 'http://somewhere.else',
         'Content-Type' => 'text/html; charset=ISO-8859-1',
         ], "$test - headers array";  
@@ -46,7 +45,6 @@ my $q = CGI::PSGI->new($env);
     my ($status,$headers) = $q->psgi_redirect( -Location=>'http://somewhere.else/bin/foo&bar',-Type=>'text/html');
     is($status, 302, "$test - status");
     is_deeply $headers, [ 
-        'Status'   => '302 Found', 
         'Location' => 'http://somewhere.else/bin/foo&bar',
         'Content-Type' => 'text/html; charset=ISO-8859-1',
         ], "$test - headers array";  
