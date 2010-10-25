@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.12  Mon Oct 25 11:06:59 PDT 2010
+        - Strip Status: header since to conform PSGI spec (clkao)
+
 0.11  Sat May  1 04:37:07 PDT 2010
         - Upped CGI.pm dependency to 3.33 to fix the upload() issue in perl 5.10
 
