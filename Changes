@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.13  Sat Oct 30 23:09:06 PDT 2010
+        - Specify Test::More dep
+
 0.12  Mon Oct 25 11:06:59 PDT 2010
         - Strip Status: header since to conform PSGI spec (clkao)
 
