@@ -214,11 +214,11 @@ CGI::PSGI - Adapt CGI.pm to the PSGI protocol
 
   use CGI::PSGI;
 
-  sub app {
+  my $app = sub {
       my $env = shift;
       my $q = CGI::PSGI->new($env);
       return [ $q->psgi_header, [ $body ] ];
-  }
+  };
 
 =head1 DESCRIPTION
 
@@ -269,7 +269,7 @@ C<env> method as well as the hash key C<plack.session>.
 
 =head2 psgi_header
 
- my ($status_code, $headers_aref) = $cgi->psgi_header(%args); 
+ my ($status_code, $headers_aref) = $cgi->psgi_header(%args);
 
 Works like CGI.pm's L<header()>, but the return format is modified. It returns
 an array with the status code and arrayref of header pairs that PSGI
