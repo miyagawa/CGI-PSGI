@@ -34,7 +34,7 @@ is_deeply $headers, [ 'Content-Type' => 'text/html; charset=ISO-8859-1' ],
 eval { $cgi->psgi_header( -type => "text/html".$CGI::CRLF."evil: stuff" ) };
 like($@,qr/contains a newline/,'invalid header blows up');
 
-my ($s,$headers) = $cgi->psgi_header( -type => "text/html".$CGI::CRLF." evil: stuff " );
+($status, $headers) = $cgi->psgi_header( -type => "text/html".$CGI::CRLF." evil: stuff " );
 like $headers->[1],
     qr#text/html evil: stuff#, 'known header, with leading and trailing whitespace on the continuation line';
 
