@@ -73,6 +73,23 @@ sub psgi_header {
                         'EXPIRES','NPH','CHARSET',
                         'ATTACHMENT','P3P'],@p);
 
+    # CR escaping for values, per RFC 822
+    for my $header ($type,$status,$cookie,$target,$expires,$nph,$charset,$attachment,$p3p,@other) {
+        if (defined $header) {
+            # From RFC 822:
+            # Unfolding  is  accomplished  by regarding   CRLF   immediately
+            # followed  by  a  LWSP-char  as equivalent to the LWSP-char.
+            $header =~ s/$CGI::CRLF(\s)/$1/g;
+
+            # All other uses of newlines are invalid input. 
+            if ($header =~ m/$CGI::CRLF|\015|\012/) {
+                # shorten very long values in the diagnostic
+                $header = substr($header,0,72).'...' if (length $header > 72);
+                die "Invalid header value contains a newline not followed by whitespace: $header";
+            }
+        }
+   }
+
     $type ||= 'text/html' unless defined($type);
     if (defined $charset) {
         $self->charset($charset);
