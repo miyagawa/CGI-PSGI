@@ -1,5 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
+0.14  Sat Dec 25 11:35:52 PST 2010
+        - Port fixes for header injection from CGI.pm (markstos)
+
 0.13  Sat Oct 30 23:09:06 PDT 2010
         - Specify Test::More dep
 
