@@ -309,6 +309,12 @@ requires.
 If your application doesn't use C<< $cgi->redirect >>, you can ignore this
 method and generate the status code and headers arrayref another way.
 
+=head1 LIMITATIONS
+
+Do not use L<CGI::Pretty> or something similar in your controller. The
+module messes up L<CGI>'s DIY autoloader and breaks CGI::PSGI (and
+potentially other) inheritance.
+
 =head1 AUTHOR
 
 Tatsuhiko Miyagawa E<lt>miyagawa@bulknews.netE<gt>
