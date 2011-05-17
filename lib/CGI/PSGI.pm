@@ -185,9 +185,12 @@ for my $method (qw(
     content_type
     path_translated
     request_uri
+    Accept
+    user_agent
     virtual_host
     remote_host
     remote_addr
+    referrer
     server_name
     server_software
     virtual_port
