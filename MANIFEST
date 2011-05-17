@@ -22,6 +22,7 @@ t/psgi.t
 t/psgi_headers.t
 t/redirect.t
 t/upload.t
+tools/extract-methods
 xt/perlcritic.t
 xt/pod.t
 xt/podspell.t
