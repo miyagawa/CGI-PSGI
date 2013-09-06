@@ -61,7 +61,7 @@ sub read_from_stdin {
     return $res;
 }
 
-# copied and rearanged from CGI::header
+# copied and rearranged from CGI::header
 sub psgi_header {
     my($self, @p) = @_;
 
