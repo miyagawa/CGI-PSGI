@@ -1,6 +1,6 @@
 use inc::Module::Install;
 name 'CGI-PSGI';
-all_from 'lib/CGI/PSGI.pm';
+all_from './lib/CGI/PSGI.pm';
 
 requires 'CGI', '3.33';
 
