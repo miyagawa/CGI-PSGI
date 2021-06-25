@@ -3,6 +3,7 @@ package CGI::PSGI;
 use strict;
 use 5.008_001;
 our $VERSION = '0.15';
+our $MAX_READ_SIZE = 1024*1024;
 
 use base qw(CGI);
 
@@ -28,6 +29,8 @@ sub env {
 
 sub read_from_client {
     my($self, $buff, $len, $offset) = @_;
+    # Prevent OOM on psgi.input, which can read the whole input to memory
+    $len = $MAX_READ_SIZE if $len > $MAX_READ_SIZE;
     $self->{psgi_env}{'psgi.input'}->read($$buff, $len, $offset);
 }
 
