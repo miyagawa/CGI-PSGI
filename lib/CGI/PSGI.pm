@@ -237,7 +237,7 @@ CGI::PSGI - Adapt CGI.pm to the PSGI protocol
   my $app = sub {
       my $env = shift;
       my $q = CGI::PSGI->new($env);
-      return [ $q->psgi_header, [ $body ] ];
+      return [ $q->psgi_header, [ body() ] ];
   };
 
 =head1 DESCRIPTION

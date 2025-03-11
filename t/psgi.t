@@ -36,10 +36,10 @@ ok $q,"CGI::new()";
 is $q->request_method => 'GET',"CGI::request_method()";
 is $q->query_string => 'game=chess;game=checkers;weather=dull',"CGI::query_string()";
 is $q->param(), 2,"CGI::param()";
-is join(' ',sort $q->param()), 'game weather',"CGI::param()";
+is join(' ',sort $q->multi_param()), 'game weather',"CGI::param()";
 is $q->param('game'), 'chess',"CGI::param()";
 is $q->param('weather'), 'dull',"CGI::param()";
-is join(' ',$q->param('game')), 'chess checkers',"CGI::param()";
+is join(' ',$q->multi_param('game')), 'chess checkers',"CGI::param()";
 ok $q->param(-name=>'foo',-value=>'bar'),'CGI::param() put';
 is $q->param(-name=>'foo'), 'bar','CGI::param() get';
 is $q->query_string, 'game=chess;game=checkers;weather=dull;foo=bar',"CGI::query_string() redux";
@@ -62,7 +62,7 @@ $q->_reset_globals;
 $env->{QUERY_STRING}='mary+had+a+little+lamb';
 ok $q=CGI::PSGI->new($env),"CGI::new() redux";
 is join(' ',$q->keywords), 'mary had a little lamb','CGI::keywords';
-is join(' ',$q->param('keywords')), 'mary had a little lamb','CGI::keywords';
+is join(' ',$q->multi_param('keywords')), 'mary had a little lamb','CGI::keywords';
 
 # test posting
 $q->_reset_globals;
@@ -110,7 +110,7 @@ $q->_reset_globals;
         for qw/ param url_param /;
 
     is_deeply [ sort $q->$_( 'keywords' ) ], [ qw/ dragon tiger / ],
-        "$_ keywords" for qw/ param url_param /;
+        "$_ keywords" for qw/ multi_param url_param /;
 }
 
 {
