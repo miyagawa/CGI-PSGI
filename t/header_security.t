@@ -98,8 +98,42 @@ sub header_value {
     is_deeply [ header_value($h, 'Set-Cookie') ], [ 'a=1', 'b=2; path=/' ], '-set-cookie arrayref';
     ok header_value($h, 'Date'), 'Date header with cookies';
 
+    $h = headers_of $q->psgi_header(-cookie => []);
+    ok header_value($h, q{Date}), q{Date header with an empty cookie list, as in CGI.pm};
+
+    $h = headers_of $q->psgi_redirect(-uri => q{/ok}, -cookie => []);
+    ok header_value($h, q{Date}), q{Date header in redirect with an empty cookie list};
+
     $h = headers_of $q->psgi_redirect(-uri => '/ok', '-set-cookie' => 'a=1');
     is header_value($h, 'Set-Cookie'), 'a=1', '-set-cookie in redirect';
+}
+
+# -cookie together with -set-cookie behaves as in CGI.pm's header()
+{
+    my $h = headers_of $q->psgi_header(-cookie => 'a=1', '-set-cookie' => 'b=2');
+    my $cgi = CGI->new({})->header(-cookie => 'a=1', '-set-cookie' => 'b=2');
+    my @expected = $cgi =~ /^Set-Cookie: (.*?)\r$/mg;
+    is_deeply [ header_value($h, 'Set-Cookie') ], \@expected, 'same cookies as CGI.pm';
+}
+
+# Location (and other named extras) from a URI object come out as strings, as on master
+SKIP: {
+    skip 'URI is not installed', 3 unless eval { require URI; 1 };
+
+    my $h = headers_of $q->psgi_redirect(URI->new('/ok'));
+    is ref(\$h->[1]), 'SCALAR', 'Location from a URI object is a plain string';
+    is $h->[1], '/ok';
+
+    $h = headers_of $q->psgi_header(-link => URI->new('/next'));
+    is ref(\ header_value($h, 'Link')), 'SCALAR', 'extra header from a URI object is a plain string';
+}
+
+# CONTENT-TYPE wins over TYPE, as in CGI.pm
+{
+    for (1..5) {
+        my $h = headers_of $q->psgi_header(-type => 'text/plain', -content_type => 'application/json');
+        is header_value($h, 'Content-Type'), 'application/json', '-content_type wins over -type';
+    }
 }
 
 # CVE-2026-120647: attachment filename is quote-escaped

@@ -6,12 +6,12 @@ Revision history for Perl extension CGI::PSGI
           - header and redirect values are no longer HTML unescaped, which
             allowed header injection via &#13;&#10; (CVE-2026-120639) and
             open redirects via e.g. /&#47evil.example/ (CVE-2026-120638)
-          - each cookie and P3P value in an array reference, and header
-            names, are checked for newlines
           - quotes and backslashes in the -attachment filename are escaped
             (CVE-2026-120647)
-          - -set-cookie is accepted as a cookie alias
           - an empty extra header value no longer comes out as a lone "
+        - Catch up with CGI.pm 4.x header() changes: each cookie and P3P
+          value in an array reference, and header names, are checked for
+          newlines, and -set-cookie is accepted as a cookie alias
         - Document CGI.pm 5.02's request limits and other changes as they
           apply to PSGI apps
         - Require CGI 4.04

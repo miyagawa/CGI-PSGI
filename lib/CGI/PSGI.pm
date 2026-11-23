@@ -93,6 +93,7 @@ sub _rearrange_params {
     $#result = $#$order;
 
     # favour CONTENT-TYPE over TYPE etc. when both are given, as CGI.pm does
+    # (same comparator as CGI.pm, for compatibility)
     for my $k (sort { $a =~ /content/i ? 1 : $b =~ /content/i ? -1 : $a cmp $b } keys %params) {
         (my $key = lc $k) =~ s/^-//;
         if (exists $pos{$key}) {
@@ -146,7 +147,7 @@ sub psgi_header {
     for my $name (sort keys %{ $leftover || {} }) {
         next unless defined $leftover->{$name};
         (my $header = lc $name) =~ tr/_/-/;
-        push @other_headers, ucfirst($header), $leftover->{$name};
+        push @other_headers, ucfirst($header), "$leftover->{$name}";
     }
 
     # Since $cookie and $p3p may be array references, stringify them
@@ -156,7 +157,7 @@ sub psgi_header {
         my $cs = UNIVERSAL::isa($_,'CGI::Cookie') ? $_->as_string : $_;
         push @cookie, $cs if defined $cs and $cs ne '';
     }
-    $p3p = join ' ', @$p3p if ref($p3p) eq 'ARRAY';
+    $p3p = join(" ", @$p3p) if ref($p3p) eq "ARRAY";
 
     # header names and values, per RFC 822
     _check_header_values($type,$status,@cookie,$target,$expires,$nph,$charset,$attachment,$p3p,@other_headers);
@@ -186,7 +187,7 @@ sub psgi_header {
     # uses OUR clock)
     push(@header,"Expires", CGI::expires($expires,'http'))
         if $expires;
-    push(@header,"Date", CGI::expires(0,'http')) if $expires || @cookie || $nph;
+    push(@header,"Date", CGI::expires(0,'http')) if $expires || $cookie || $nph;
     push(@header,"Pragma", "no-cache") if $self->cache();
     if ($attachment) {
         # the filename is a quoted-string (RFC 9110 5.6.4), so a " or \ in
@@ -381,7 +382,8 @@ As in CGI.pm 5.02, C<psgi_header> and C<psgi_redirect> use header values and
 the redirect URL exactly as given: they are no longer HTML unescaped. Pass
 e.g. C</x?a=1&b=2>, not C</x?a=1&amp;b=2>. A newline in a header name or
 value (including each cookie and P3P value in an array reference) makes them
-die, and quotes and backslashes in the C<-attachment> filename are escaped.
+die (a CRLF followed by whitespace is unfolded instead, as in CGI.pm), and
+quotes and backslashes in the C<-attachment> filename are escaped.
 
 =head2 Request limits and CGI.pm 5.02
 
