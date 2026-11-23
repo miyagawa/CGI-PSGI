@@ -17,6 +17,11 @@ sub new {
 
     local *ENV = $env;
     local $CGI::MOD_PERL = 0;
+    # never fall back to CGI.pm's offline debugging mode, which reads the
+    # params from the process' own @ARGV: older CGI.pm does that for any
+    # unrecognised REQUEST_METHOD, e.g. OPTIONS (CVE-2026-120637), and all
+    # versions do it for an env without one
+    local $CGI::DEBUG = 0;
     $self->SUPER::init;
 
     $self;
@@ -31,7 +36,8 @@ sub read_from_client {
     $self->{psgi_env}{'psgi.input'}->read($$buff, $len, $offset);
 }
 
-# copied from CGI.pm
+# copied from CGI.pm. Deprecated: no CGI.pm since (at least) 4.04 calls it,
+# and it will be removed in a future release.
 sub read_from_stdin {
     my($self, $buff) = @_;
 
@@ -190,7 +196,7 @@ for my $method (qw(
     virtual_host
     remote_host
     remote_addr
-    referrer
+    referer
     server_name
     server_software
     virtual_port
@@ -204,7 +210,11 @@ for my $method (qw(
     user_name
     read_multipart
     read_multipart_related
+    env_query_string
 )) {
+    # skip methods the installed CGI.pm doesn't have (env_query_string
+    # is new in CGI.pm 4.x)
+    next unless CGI->can($method);
     no strict 'refs';
     *$method = sub {
         my $self  = shift;
