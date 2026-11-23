@@ -67,34 +67,99 @@ sub read_from_stdin {
     return $res;
 }
 
-# copied and rearranged from CGI::header
+# Like CGI::Util::_rearrange_params (private to CGI.pm, so not used
+# directly): maps -named or positional arguments onto the slots in $order
+# and returns the slots, plus a hash ref of the leftover named arguments.
+sub _rearrange_params {
+    my($order, @param) = @_;
+    return [] unless @param;
+
+    if (ref($param[0]) eq 'HASH') {
+        @param = %{$param[0]};
+    } else {
+        return \@param
+            unless defined($param[0]) && substr($param[0],0,1) eq '-';
+    }
+
+    my(%pos, $i);
+    $i = 0;
+    for my $slot (@$order) {
+        $pos{lc $_} = $i for ref($slot) eq 'ARRAY' ? @$slot : $slot;
+        $i++;
+    }
+
+    my %params = @param;
+    my(@result, %leftover);
+    $#result = $#$order;
+
+    # favour CONTENT-TYPE over TYPE etc. when both are given, as CGI.pm does
+    for my $k (sort { $a =~ /content/i ? 1 : $b =~ /content/i ? -1 : $a cmp $b } keys %params) {
+        (my $key = lc $k) =~ s/^-//;
+        if (exists $pos{$key}) {
+            $result[$pos{$key}] = $params{$k};
+        } else {
+            $leftover{$key} = $params{$k};
+        }
+    }
+
+    return \@result, \%leftover;
+}
+
+# Unfold CRLF + whitespace (RFC 822) in place, and die on any other newline.
+sub _check_header_values {
+    for my $header (@_) {
+        next unless defined $header;
+        $header =~ s/$CGI::CRLF(\s)/$1/g;
+        if ($header =~ m/$CGI::CRLF|\015|\012/) {
+            # shorten very long values in the diagnostic
+            $header = substr($header,0,72).'...' if length $header > 72;
+            die "Invalid header value contains a newline not followed by whitespace: $header";
+        }
+    }
+}
+
+# Ported from CGI::header. Values are used as given: like CGI.pm 5.02 they are
+# no longer HTML unescaped, which decoded entities such as &#13;&#10; after
+# the newline check (CVE-2026-120639).
 sub psgi_header {
     my($self, @p) = @_;
 
     my(@header);
 
-    my($type,$status,$cookie,$target,$expires,$nph,$charset,$attachment,$p3p,@other) =
-        CGI::rearrange([['TYPE','CONTENT_TYPE','CONTENT-TYPE'],
-                        'STATUS',['COOKIE','COOKIES'],'TARGET',
-                        'EXPIRES','NPH','CHARSET',
-                        'ATTACHMENT','P3P'],@p);
+    my $order = [['TYPE','CONTENT_TYPE','CONTENT-TYPE'],
+                 'STATUS',['COOKIE','COOKIES','SET-COOKIE'],'TARGET',
+                 'EXPIRES','NPH','CHARSET',
+                 'ATTACHMENT','P3P'];
+    my($result, $leftover) = _rearrange_params($order, @p);
+    my($type,$status,$cookie,$target,$expires,$nph,$charset,$attachment,$p3p) =
+        @{$result}[0 .. $#$order];
 
-    # CR escaping for values, per RFC 822
-    for my $header ($type,$status,$cookie,$target,$expires,$nph,$charset,$attachment,$p3p,@other) {
-        if (defined $header) {
-            # From RFC 822:
-            # Unfolding  is  accomplished  by regarding   CRLF   immediately
-            # followed  by  a  LWSP-char  as equivalent to the LWSP-char.
-            $header =~ s/$CGI::CRLF(\s)/$1/g;
+    # extra headers: positional ones given as name=value, and leftover named
+    # ones, where -x_foo => 'bar' becomes X-foo: bar
+    my @other_headers;
+    for my $line (@{$result}[@$order .. $#$result]) {
+        next unless defined $line;
+        # Don't use \s because of perl bug 21951
+        next unless my($name, $value) = $line =~ /([^ \r\n\t=]+)=\"?(.+?)\"?$/s;
+        push @other_headers, ucfirst(lc $name), $value;
+    }
+    for my $name (sort keys %{ $leftover || {} }) {
+        next unless defined $leftover->{$name};
+        (my $header = lc $name) =~ tr/_/-/;
+        push @other_headers, ucfirst($header), $leftover->{$name};
+    }
 
-            # All other uses of newlines are invalid input. 
-            if ($header =~ m/$CGI::CRLF|\015|\012/) {
-                # shorten very long values in the diagnostic
-                $header = substr($header,0,72).'...' if (length $header > 72);
-                die "Invalid header value contains a newline not followed by whitespace: $header";
-            }
-        }
-   }
+    # Since $cookie and $p3p may be array references, stringify them
+    # before the newline checks.
+    my @cookie;
+    for (ref($cookie) eq 'ARRAY' ? @$cookie : $cookie) {
+        my $cs = UNIVERSAL::isa($_,'CGI::Cookie') ? $_->as_string : $_;
+        push @cookie, $cs if defined $cs and $cs ne '';
+    }
+    $p3p = join ' ', @$p3p if ref($p3p) eq 'ARRAY';
+
+    # header names and values, per RFC 822
+    _check_header_values($type,$status,@cookie,$target,$expires,$nph,$charset,$attachment,$p3p,@other_headers);
 
     $type ||= 'text/html' unless defined($type);
     if (defined $charset) {
@@ -104,47 +169,32 @@ sub psgi_header {
     }
     $charset ||= '';
 
-    # rearrange() was designed for the HTML portion, so we
-    # need to fix it up a little.
-    my @other_headers;
-    for (@other) {
-        # Don't use \s because of perl bug 21951
-        next unless my($header,$value) = /([^ \r\n\t=]+)=\"?(.+?)\"?$/;
-        $header =~ s/^(\w)(.*)/"\u$1\L$2"/e;
-        push @other_headers, $header, $self->unescapeHTML($value);
-    }
-
     $type .= "; charset=$charset"
         if     $type ne ''
            and $type !~ /\bcharset\b/
            and defined $charset
            and $charset ne '';
 
-    # Maybe future compatibility.  Maybe not.
-    my $protocol = $self->{psgi_env}{SERVER_PROTOCOL} || 'HTTP/1.0';
-
     push(@header, "Window-Target", $target) if $target;
-    if ($p3p) {
-        $p3p = join ' ',@$p3p if ref($p3p) eq 'ARRAY';
-        push(@header,"P3P", qq(policyref="/w3c/p3p.xml", CP="$p3p"));
-    }
+    push(@header, "P3P", qq(policyref="/w3c/p3p.xml", CP="$p3p")) if $p3p;
 
     # push all the cookies -- there may be several
-    if ($cookie) {
-        my(@cookie) = ref($cookie) && ref($cookie) eq 'ARRAY' ? @{$cookie} : $cookie;
-        for (@cookie) {
-            my $cs = UNIVERSAL::isa($_,'CGI::Cookie') ? $_->as_string : $_;
-            push(@header,"Set-Cookie", $cs) if $cs ne '';
-        }
-    }
+    push(@header, map { ("Set-Cookie", $_) } @cookie);
+
     # if the user indicates an expiration time, then we need
     # both an Expires and a Date header (so that the browser is
     # uses OUR clock)
     push(@header,"Expires", CGI::expires($expires,'http'))
         if $expires;
-    push(@header,"Date", CGI::expires(0,'http')) if $expires || $cookie || $nph;
+    push(@header,"Date", CGI::expires(0,'http')) if $expires || @cookie || $nph;
     push(@header,"Pragma", "no-cache") if $self->cache();
-    push(@header,"Content-Disposition", "attachment; filename=\"$attachment\"") if $attachment;
+    if ($attachment) {
+        # the filename is a quoted-string (RFC 9110 5.6.4), so a " or \ in
+        # it must be escaped, or it could inject other parameters
+        # (CVE-2026-120647)
+        (my $filename = $attachment) =~ s/(["\\])/\\$1/g;
+        push(@header,"Content-Disposition", "attachment; filename=\"$filename\"");
+    }
     push(@header, @other_headers);
 
     push(@header,"Content-Type", $type) if $type ne '';
@@ -155,24 +205,30 @@ sub psgi_header {
     return $status, \@header;
 }
 
-# Ported from CGI.pm's redirect() method. 
+# Ported from CGI.pm's redirect() method. Like CGI.pm 5.02, values are passed
+# on as given: HTML unescaping them decoded entities in a (possibly app
+# validated) Location, e.g. "/&#47evil.example/" became "//evil.example/"
+# (CVE-2026-120638).
 sub psgi_redirect {
     my ($self,@p) = @_;
-    my($url,$target,$status,$cookie,$nph,@other) = 
-         CGI::rearrange([['LOCATION','URI','URL'],'TARGET','STATUS',['COOKIE','COOKIES'],'NPH'],@p);
+    my $order = [['LOCATION','URI','URL'],'TARGET','STATUS',['COOKIE','COOKIES','SET-COOKIE'],'NPH'];
+    my($result, $leftover) = _rearrange_params($order, @p);
+    my($url,$target,$status,$cookie,$nph,@other) = @$result;
     $status = '302 Found' unless defined $status;
     $url ||= $self->self_url;
     my(@o);
-    for (@other) { tr/\"//d; push(@o,split("=",$_,2)); }
+    # extra positional parameters, given as name=value
+    for (@other) { next unless defined; tr/\"//d; push(@o,split("=",$_,2)); }
+    # extra named parameters
+    push(@o, map { ("-$_" => $leftover->{$_}) } sort keys %{ $leftover || {} });
     unshift(@o,
 	 '-Status'  => $status,
 	 '-Location'=> $url,
 	 '-nph'     => $nph);
     unshift(@o,'-Target'=>$target) if $target;
     unshift(@o,'-Type'=>'');
-    my @unescaped;
-    unshift(@unescaped,'-Cookie'=>$cookie) if $cookie;
-    return $self->psgi_header((map {$self->unescapeHTML($_)} @o),@unescaped);
+    unshift(@o,'-Cookie'=>$cookie) if $cookie;
+    return $self->psgi_header(@o);
 }
 
 # The list is auto generated and modified with:
