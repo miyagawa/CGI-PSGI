@@ -375,6 +375,51 @@ requires.
 If your application doesn't use C<< $cgi->redirect >>, you can ignore this
 method and generate the status code and headers arrayref another way.
 
+=head2 Header and redirect values
+
+As in CGI.pm 5.02, C<psgi_header> and C<psgi_redirect> use header values and
+the redirect URL exactly as given: they are no longer HTML unescaped. Pass
+e.g. C</x?a=1&b=2>, not C</x?a=1&amp;b=2>. A newline in a header name or
+value (including each cookie and P3P value in an array reference) makes them
+die, and quotes and backslashes in the C<-attachment> filename are escaped.
+
+=head2 Request limits and CGI.pm 5.02
+
+CGI::PSGI reads the request body from C<psgi.input> through CGI.pm, so CGI.pm's
+request handling applies to PSGI apps too. With CGI.pm 5.02 or later that
+includes:
+
+=over 4
+
+=item *
+
+C<$CGI::POST_MAX> defaults to 128MB, and there are new C<$CGI::MAX_PARAMS>
+(10,000) and C<$CGI::MAX_UPLOADS> (1,000) limits. A request over a limit gets
+a C<413 Request entity too large> C<cgi_error>, so check
+C<< $q->cgi_error >> and set the response status yourself. Set a limit to
+-1 for no limit.
+
+=item *
+
+C<X-Forwarded-Host> is ignored by C<url>, C<self_url> and the default
+C<psgi_redirect> location, unless C<$CGI::TRUST_X_FORWARDED_HOST> is set.
+Behind a reverse proxy, consider L<Plack::Middleware::ReverseProxy>.
+
+=item *
+
+Upload filenames have any directory part and control characters removed,
+unless C<$CGI::SANITIZE_UPLOAD_FILENAMES> is 0.
+
+=item *
+
+Client sent parameters named C<POSTDATA>, C<PUTDATA>, C<PATCHDATA> or
+C<XForms:Model> are ignored.
+
+=back
+
+These are process-wide globals. In a persistent PSGI server, set them once
+at startup, or with C<local> around C<< CGI::PSGI->new >> for one request.
+
 =head1 LIMITATIONS
 
 Do not use L<CGI::Pretty> or something similar in your controller. The
