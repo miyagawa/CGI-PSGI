@@ -299,6 +299,8 @@ CGI::PSGI - Adapt CGI.pm to the PSGI protocol
 
 =head1 SYNOPSIS
 
+=for test_synopsis my $body;
+
   use CGI::PSGI;
 
   my $app = sub {

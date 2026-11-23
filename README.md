@@ -1,0 +1,134 @@
+# NAME
+
+CGI::PSGI - Adapt CGI.pm to the PSGI protocol
+
+# SYNOPSIS
+
+    use CGI::PSGI;
+
+    my $app = sub {
+        my $env = shift;
+        my $q = CGI::PSGI->new($env);
+        return [ $q->psgi_header, [ $body ] ];
+    };
+
+# DESCRIPTION
+
+This module is for web application framework developers who currently uses
+[CGI](https://metacpan.org/pod/CGI) to handle query parameters, and would like for the frameworks to comply
+with the [PSGI](https://metacpan.org/pod/PSGI) protocol.
+
+Only slight modifications should be required if the framework is already
+collecting the body content to print to STDOUT at one place (rather using
+the print-as-you-go approach).
+
+On the other hand, if you are an "end user" of CGI.pm and have a CGI script
+that you want to run under PSGI web servers, this module might not be what you
+want.  Take a look at [CGI::Emulate::PSGI](https://metacpan.org/pod/CGI%3A%3AEmulate%3A%3APSGI) instead.
+
+Your application, typically the web application framework adapter
+should update the code to do `CGI::PSGI->new($env)` instead of
+`CGI->new` to create a new CGI object. (This is similar to how
+[CGI::Fast](https://metacpan.org/pod/CGI%3A%3AFast) object is initialized in a FastCGI environment.)
+
+# INTERFACES SUPPORTED
+
+Only the object-oriented interface of CGI.pm is supported through CGI::PSGI.
+This means you should always create an object with `CGI::PSGI->new($env)`
+and should call methods on the object.
+
+The function-based interface like `use CGI ':standard'` does not work with this module.
+
+# METHODS
+
+CGI::PSGI adds the following extra methods to CGI.pm:
+
+## env
+
+    $env = $cgi->env;
+
+Returns the PSGI environment in a hash reference. This allows CGI.pm-based
+application frameworks such as [CGI::Application](https://metacpan.org/pod/CGI%3A%3AApplication) to access PSGI extensions,
+typically set by Plack Middleware components.
+
+So if you enable [Plack::Middleware::Session](https://metacpan.org/pod/Plack%3A%3AMiddleware%3A%3ASession), your application and
+plugin developers can access the session via:
+
+    $cgi->env->{'plack.session'}->get("foo");
+
+Of course this should be coded carefully by checking the existence of
+`env` method as well as the hash key `plack.session`.
+
+## psgi\_header
+
+    my ($status_code, $headers_aref) = $cgi->psgi_header(%args);
+
+Works like CGI.pm's [header()](https://metacpan.org/pod/header%28%29), but the return format is modified. It returns
+an array with the status code and arrayref of header pairs that PSGI
+requires.
+
+If your application doesn't use `$cgi->header`, you can ignore this
+method and generate the status code and headers arrayref another way.
+
+## psgi\_redirect
+
+    my ($status_code, $headers_aref) = $cgi->psgi_redirect(%args); 
+
+Works like CGI.pm's [redirect()](https://metacpan.org/pod/redirect%28%29), but the return format is modified. It
+returns an array with the status code and arrayref of header pairs that PSGI
+requires.
+
+If your application doesn't use `$cgi->redirect`, you can ignore this
+method and generate the status code and headers arrayref another way.
+
+## Header and redirect values
+
+As in CGI.pm 5.02, `psgi_header` and `psgi_redirect` use header values and
+the redirect URL exactly as given: they are no longer HTML unescaped. Pass
+e.g. `/x?a=1&b=2`, not `/x?a=1&amp;b=2`. A newline in a header name or
+value (including each cookie and P3P value in an array reference) makes them
+die (a CRLF followed by whitespace is unfolded instead, as in CGI.pm), and
+quotes and backslashes in the `-attachment` filename are escaped.
+
+## Request limits and CGI.pm 5.02
+
+CGI::PSGI reads the request body from `psgi.input` through CGI.pm, so CGI.pm's
+request handling applies to PSGI apps too. With CGI.pm 5.02 or later that
+includes:
+
+- `$CGI::POST_MAX` defaults to 128MB, and there are new `$CGI::MAX_PARAMS`
+(10,000) and `$CGI::MAX_UPLOADS` (1,000) limits. A request over a limit gets
+a `413 Request entity too large` `cgi_error`, so check
+`$q->cgi_error` and set the response status yourself. Set a limit to
+-1 for no limit.
+- `X-Forwarded-Host` is ignored by `url`, `self_url` and the default
+`psgi_redirect` location, unless `$CGI::TRUST_X_FORWARDED_HOST` is set.
+Behind a reverse proxy, consider [Plack::Middleware::ReverseProxy](https://metacpan.org/pod/Plack%3A%3AMiddleware%3A%3AReverseProxy).
+- Upload filenames have any directory part and control characters removed,
+unless `$CGI::SANITIZE_UPLOAD_FILENAMES` is 0.
+- Client sent parameters named `POSTDATA`, `PUTDATA`, `PATCHDATA` or
+`XForms:Model` are ignored.
+
+These are process-wide globals. In a persistent PSGI server, set them once
+at startup, or with `local` around `CGI::PSGI->new` for one request.
+
+# LIMITATIONS
+
+Do not use [CGI::Pretty](https://metacpan.org/pod/CGI%3A%3APretty) or something similar in your controller. The
+module messes up [CGI](https://metacpan.org/pod/CGI)'s DIY autoloader and breaks CGI::PSGI (and
+potentially other) inheritance.
+
+# AUTHOR
+
+Tatsuhiko Miyagawa <miyagawa@bulknews.net>
+
+Mark Stosberg <mark@summersault.com>
+
+# LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+# SEE ALSO
+
+[CGI](https://metacpan.org/pod/CGI), [CGI::Emulate::PSGI](https://metacpan.org/pod/CGI%3A%3AEmulate%3A%3APSGI)

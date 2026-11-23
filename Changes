@@ -1,6 +1,12 @@
 Revision history for Perl extension CGI::PSGI
 
-0.16  (not yet released)
+{{$NEXT}}
+        - Fix the env wrappers: referer (was misspelled referrer) and
+          env_query_string now read the PSGI env, and methods the installed
+          CGI.pm lacks are skipped
+        - Never read the process's @ARGV as request parameters
+          (CVE-2026-120637 on CGI.pm < 5.02, and envs with no REQUEST_METHOD)
+        - Mark read_from_stdin as deprecated
         - Port the CGI.pm 5.02 header()/redirect() security fixes to
           psgi_header and psgi_redirect:
           - header and redirect values are no longer HTML unescaped, which
@@ -15,6 +21,7 @@ Revision history for Perl extension CGI::PSGI
         - Document CGI.pm 5.02's request limits and other changes as they
           apply to PSGI apps
         - Require CGI 4.04
+        - Convert the distribution to Dist::Milla
 
 0.15  Tue May 17 13:58:50 PDT 2011
         - Updated the list of overriding methods per CGI.pm update
