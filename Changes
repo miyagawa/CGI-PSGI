@@ -1,6 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
 {{$NEXT}}
+
+0.16  2026-11-23 23:22:20 JST
         - Fix the env wrappers: referer (was misspelled referrer) and
           env_query_string now read the PSGI env, and methods the installed
           CGI.pm lacks are skipped
