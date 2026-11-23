@@ -16,7 +16,9 @@ MANIFEST			This list of files
 META.yml
 README
 t/00_compile.t
+t/cgi502.t
 t/cookie.t
+t/header_security.t
 t/http.t
 t/psgi.t
 t/psgi_headers.t
