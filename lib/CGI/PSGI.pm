@@ -31,9 +31,22 @@ sub env {
     $_[0]->{psgi_env};
 }
 
+# CGI.pm expects read() on STDIN semantics: the full $len bytes unless EOF or
+# an error. psgi.input->read may return fewer (like sysread), so keep reading
+# until $len, EOF (0) or an error (undef). Returns the number of bytes read,
+# or the 0/undef of the first read if nothing was read.
 sub read_from_client {
     my($self, $buff, $len, $offset) = @_;
-    $self->{psgi_env}{'psgi.input'}->read($$buff, $len, $offset);
+    my $input = $self->{psgi_env}{'psgi.input'};
+    $offset ||= 0;
+
+    my $total = 0;
+    while ($total < $len) {
+        my $read = $input->read($$buff, $len - $total, $offset + $total);
+        return $total || $read unless $read;
+        $total += $read;
+    }
+    return $total;
 }
 
 # copied from CGI.pm. Deprecated: no CGI.pm since (at least) 4.04 calls it,

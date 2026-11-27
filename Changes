@@ -1,6 +1,9 @@
 Revision history for Perl extension CGI::PSGI
 
 {{$NEXT}}
+        - Keep reading psgi.input until the requested length, EOF or an
+          error: a server returning short reads truncated urlencoded and
+          XML bodies, and broke multipart ones (reported by shigeta)
 
 0.16  2026-11-23 23:22:20 JST
         - Fix the env wrappers: referer (was misspelled referrer) and
