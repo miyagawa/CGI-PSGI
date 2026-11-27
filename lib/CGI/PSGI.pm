@@ -148,14 +148,24 @@ sub psgi_header {
     my($type,$status,$cookie,$target,$expires,$nph,$charset,$attachment,$p3p) =
         @{$result}[0 .. $#$order];
 
-    # extra headers: positional ones given as name=value, and leftover named
-    # ones, where -x_foo => 'bar' becomes X-foo: bar
+    # extra headers: positional ones given as name=value or as a ready-made
+    # "Name: value" line (which CGI.pm 5.02 sends as it is), and leftover
+    # named ones, where -x_foo => 'bar' becomes X-foo: bar
     my @other_headers;
-    for my $line (@{$result}[@$order .. $#$result]) {
-        next unless defined $line;
+    my @lines = grep defined, @{$result}[@$order .. $#$result];
+    # check the whole lines first, so a newline anywhere in one dies
+    # rather than the line being skipped
+    _check_header_values(@lines);
+    for my $line (@lines) {
         # Don't use \s because of perl bug 21951
-        next unless my($name, $value) = $line =~ /([^ \r\n\t=]+)=\"?(.+?)\"?$/s;
-        push @other_headers, ucfirst(lc $name), $value;
+        if (my($name, $value) = $line =~ /([^ \r\n\t=]+)=\"?(.+?)\"?$/s) {
+            push @other_headers, ucfirst(lc $name), $value;
+        } elsif (($name, $value) = $line =~ /^([!#\$%&'*+.^_`|~0-9A-Za-z-]+):[ \t]*(.*?)[ \t]*$/s) {
+            # CGI.pm ucfirsts the whole line
+            push @other_headers, ucfirst($name), $value;
+        }
+        # anything else (no colon, or not a valid header name) can't be
+        # made a header, and is skipped
     }
     for my $name (sort keys %{ $leftover || {} }) {
         next unless defined $leftover->{$name};
@@ -379,6 +389,10 @@ requires.
 
 If your application doesn't use C<< $cgi->header >>, you can ignore this
 method and generate the status code and headers arrayref another way.
+
+As in CGI.pm, extra positional arguments after the P3P one are extra
+headers, given as C<name=value> or as a C<Name: value> line. A line that
+is neither (no colon, or an invalid header name) is skipped.
 
 =head2 psgi_redirect
 
