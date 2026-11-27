@@ -1,6 +1,8 @@
 Revision history for Perl extension CGI::PSGI
 
 {{$NEXT}}
+
+0.17  2026-11-27 23:38:46 JST
         - Keep reading psgi.input until the requested length, EOF or an
           error: a server returning short reads truncated urlencoded and
           XML bodies, and broke multipart ones (reported by shigeta)

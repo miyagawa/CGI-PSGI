@@ -2,7 +2,7 @@ package CGI::PSGI;
 
 use strict;
 use 5.008_001;
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use base qw(CGI);
 
