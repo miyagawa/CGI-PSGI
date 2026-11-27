@@ -70,6 +70,10 @@ requires.
 If your application doesn't use `$cgi->header`, you can ignore this
 method and generate the status code and headers arrayref another way.
 
+As in CGI.pm, extra positional arguments after the P3P one are extra
+headers, given as `name=value` or as a `Name: value` line. A line that
+is neither (no colon, or an invalid header name) is skipped.
+
 ## psgi\_redirect
 
     my ($status_code, $headers_aref) = $cgi->psgi_redirect(%args); 
